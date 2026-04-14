@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { LogoutButton } from '@/components/logout-button'
 
@@ -21,10 +22,13 @@ export default async function DiretorLayout({
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (!user) redirect('/login')
+  if (user.user_metadata?.perfil !== 'diretor') redirect('/aluno/dashboard')
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('nome')
-    .eq('id', user!.id)
+    .eq('id', user.id)
     .single()
 
   const initial = profile?.nome?.charAt(0).toUpperCase() ?? '?'
