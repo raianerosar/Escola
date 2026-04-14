@@ -32,6 +32,7 @@ describe('LoginPage', () => {
 
   it('shows inline error on invalid credentials', async () => {
     mockSignInWithPassword.mockResolvedValue({
+      data: { user: null },
       error: { message: 'Invalid login credentials' },
     })
     render(<LoginPage />)
@@ -43,14 +44,31 @@ describe('LoginPage', () => {
     })
   })
 
-  it('redirects to /diretor/dashboard on success', async () => {
-    mockSignInWithPassword.mockResolvedValue({ error: null })
+  it('redirects to /diretor/dashboard on diretor login', async () => {
+    mockSignInWithPassword.mockResolvedValue({
+      data: { user: { user_metadata: { perfil: 'diretor' } } },
+      error: null,
+    })
     render(<LoginPage />)
-    await userEvent.type(screen.getByPlaceholderText('Email'), 'diretor@escola.com')
-    await userEvent.type(screen.getByPlaceholderText('Senha'), 'senha123')
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'admin@admin.com')
+    await userEvent.type(screen.getByPlaceholderText('Senha'), 'admin123')
     await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/diretor/dashboard')
+    })
+  })
+
+  it('redirects to /aluno/dashboard on aluno login', async () => {
+    mockSignInWithPassword.mockResolvedValue({
+      data: { user: { user_metadata: { perfil: 'aluno' } } },
+      error: null,
+    })
+    render(<LoginPage />)
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'aluno@aluno.com')
+    await userEvent.type(screen.getByPlaceholderText('Senha'), 'aluno123')
+    await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/aluno/dashboard')
     })
   })
 })
