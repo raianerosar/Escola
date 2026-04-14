@@ -1,6 +1,6 @@
+import { resolveRedirect } from '@/lib/auth/resolve-redirect'
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { resolveRedirect } from '@/lib/auth/resolve-redirect'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -30,21 +30,20 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  let perfil: string | null = null
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('perfil')
-      .eq('id', user.id)
-      .single()
-    perfil = profile?.perfil ?? null
-  }
-
   const { pathname } = request.nextUrl
-  const redirectPath = resolveRedirect(pathname, user?.id ?? null, perfil)
+  const userId = user?.id ?? null
+  const perfil = (user?.user_metadata?.perfil as string) ?? null
 
-  if (redirectPath) {
-    return NextResponse.redirect(new URL(redirectPath, request.url))
+  const destination = resolveRedirect(pathname, userId, perfil)
+
+  if (destination) {
+    const redirectResponse = NextResponse.redirect(
+      new URL(destination, request.url)
+    )
+    supabaseResponse.cookies.getAll().forEach(({ name, value }) => {
+      redirectResponse.cookies.set(name, value)
+    })
+    return redirectResponse
   }
 
   return supabaseResponse
