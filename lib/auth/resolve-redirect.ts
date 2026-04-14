@@ -1,18 +1,24 @@
 export function resolveRedirect(
   pathname: string,
   userId: string | null,
-  perfil: string | null
+  perfil: string | null,
 ): string | null {
-  if (!userId && pathname !== '/login') return '/login'
+  const publicRoutes = ['/login']
 
-  if (userId) {
-    if (pathname === '/' || pathname === '/login') {
-      if (perfil === 'diretor') return '/diretor/dashboard'
-    }
+  if (!userId) {
+    return publicRoutes.includes(pathname) ? null : '/login'
+  }
 
-    if (pathname.startsWith('/diretor') && perfil !== 'diretor') {
-      return '/login'
-    }
+  if (pathname === '/login' || pathname === '/') {
+    return perfil === 'aluno' ? '/aluno/dashboard' : '/diretor/dashboard'
+  }
+
+  if (pathname.startsWith('/diretor/') && perfil !== 'diretor') {
+    return '/login'
+  }
+
+  if (pathname.startsWith('/aluno/') && perfil !== 'aluno') {
+    return '/diretor/dashboard'
   }
 
   return null
