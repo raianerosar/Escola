@@ -31,7 +31,7 @@ export default function LoginPage() {
       return
     }
 
-    const perfil = data.user?.app_metadata?.perfil
+    const perfil = data.user?.user_metadata?.perfil
     const dest =
       perfil === 'aluno'
         ? '/aluno/dashboard'

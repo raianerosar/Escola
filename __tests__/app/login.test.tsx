@@ -46,7 +46,7 @@ describe('LoginPage', () => {
 
   it('redirects to /diretor/dashboard on diretor login', async () => {
     mockSignInWithPassword.mockResolvedValue({
-      data: { user: { app_metadata: { perfil: 'diretor' } } },
+      data: { user: { user_metadata: { perfil: 'diretor' } } },
       error: null,
     })
     render(<LoginPage />)
@@ -60,7 +60,7 @@ describe('LoginPage', () => {
 
   it('redirects to /aluno/dashboard on aluno login', async () => {
     mockSignInWithPassword.mockResolvedValue({
-      data: { user: { app_metadata: { perfil: 'aluno' } } },
+      data: { user: { user_metadata: { perfil: 'aluno' } } },
       error: null,
     })
     render(<LoginPage />)
@@ -74,7 +74,7 @@ describe('LoginPage', () => {
 
   it('redirects to /professor/dashboard on professor login', async () => {
     mockSignInWithPassword.mockResolvedValue({
-      data: { user: { app_metadata: { perfil: 'professor' } } },
+      data: { user: { user_metadata: { perfil: 'professor' } } },
       error: null,
     })
     render(<LoginPage />)
