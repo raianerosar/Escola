@@ -46,12 +46,12 @@ describe('LoginPage', () => {
 
   it('redirects to /diretor/dashboard on diretor login', async () => {
     mockSignInWithPassword.mockResolvedValue({
-      data: { user: { user_metadata: { perfil: 'diretor' } } },
+      data: { user: { app_metadata: { perfil: 'diretor' } } },
       error: null,
     })
     render(<LoginPage />)
     await userEvent.type(screen.getByPlaceholderText('Email'), 'admin@admin.com')
-    await userEvent.type(screen.getByPlaceholderText('Senha'), 'admin123')
+    await userEvent.type(screen.getByPlaceholderText('Senha'), '123456')
     await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/diretor/dashboard')
@@ -60,15 +60,29 @@ describe('LoginPage', () => {
 
   it('redirects to /aluno/dashboard on aluno login', async () => {
     mockSignInWithPassword.mockResolvedValue({
-      data: { user: { user_metadata: { perfil: 'aluno' } } },
+      data: { user: { app_metadata: { perfil: 'aluno' } } },
       error: null,
     })
     render(<LoginPage />)
     await userEvent.type(screen.getByPlaceholderText('Email'), 'aluno@aluno.com')
-    await userEvent.type(screen.getByPlaceholderText('Senha'), 'aluno123')
+    await userEvent.type(screen.getByPlaceholderText('Senha'), '123456')
     await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/aluno/dashboard')
+    })
+  })
+
+  it('redirects to /professor/dashboard on professor login', async () => {
+    mockSignInWithPassword.mockResolvedValue({
+      data: { user: { app_metadata: { perfil: 'professor' } } },
+      error: null,
+    })
+    render(<LoginPage />)
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'prof@prof.com')
+    await userEvent.type(screen.getByPlaceholderText('Senha'), '123456')
+    await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/professor/dashboard')
     })
   })
 })

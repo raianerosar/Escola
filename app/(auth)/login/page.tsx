@@ -31,8 +31,13 @@ export default function LoginPage() {
       return
     }
 
-    const perfil = data.user?.user_metadata?.perfil
-    const dest = perfil === 'aluno' ? '/aluno/dashboard' : '/diretor/dashboard'
+    const perfil = data.user?.app_metadata?.perfil
+    const dest =
+      perfil === 'aluno'
+        ? '/aluno/dashboard'
+        : perfil === 'professor'
+          ? '/professor/dashboard'
+          : '/diretor/dashboard'
     router.push(dest)
   }
 
