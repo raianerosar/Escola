@@ -9,16 +9,26 @@ export function resolveRedirect(
     return publicRoutes.includes(pathname) ? null : '/login'
   }
 
+  function homeDashboard(): string {
+    if (perfil === 'aluno') return '/aluno/dashboard'
+    if (perfil === 'professor') return '/professor/dashboard'
+    return '/diretor/dashboard'
+  }
+
   if (pathname === '/login' || pathname === '/') {
-    return perfil === 'aluno' ? '/aluno/dashboard' : '/diretor/dashboard'
+    return homeDashboard()
   }
 
   if (pathname.startsWith('/diretor/') && perfil !== 'diretor') {
-    return '/login'
+    return homeDashboard()
   }
 
   if (pathname.startsWith('/aluno/') && perfil !== 'aluno') {
-    return '/diretor/dashboard'
+    return homeDashboard()
+  }
+
+  if (pathname.startsWith('/professor/') && perfil !== 'professor') {
+    return homeDashboard()
   }
 
   return null
