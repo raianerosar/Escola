@@ -23,7 +23,10 @@ export default async function DiretorLayout({
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
-  if (user.user_metadata?.perfil !== 'diretor') redirect('/aluno/dashboard')
+  const perfil = user.user_metadata?.perfil
+  if (perfil !== 'diretor') {
+    redirect(perfil === 'professor' ? '/professor/dashboard' : '/aluno/dashboard')
+  }
 
   const { data: profile } = await supabase
     .from('profiles')

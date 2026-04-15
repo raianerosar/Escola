@@ -20,7 +20,10 @@ export default async function AlunoLayout({
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
-  if (user.user_metadata?.perfil !== 'aluno') redirect('/diretor/dashboard')
+  const perfil = user.user_metadata?.perfil
+  if (perfil !== 'aluno') {
+    redirect(perfil === 'professor' ? '/professor/dashboard' : '/diretor/dashboard')
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
