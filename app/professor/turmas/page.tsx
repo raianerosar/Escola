@@ -43,7 +43,7 @@ export default async function TurmasPage() {
               </tr>
             </thead>
             <tbody>
-              {(turmas as TurmaRow[]).map((turma) => (
+              {(turmas as unknown as TurmaRow[]).map((turma) => (
                 <tr key={turma.id} className="border-b border-zinc-800/50">
                   <td className="px-6 py-3 text-zinc-300 text-sm font-medium">{turma.nome}</td>
                   <td className="px-6 py-3 text-zinc-400 text-sm">{turma.cursos?.nome ?? '—'}</td>

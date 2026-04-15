@@ -26,7 +26,7 @@ async function getTurmaData(turmaId: string) {
     .eq('turma_id', turmaId)
     .order('status')
 
-  return { turma: turma as TurmaDetail, matriculas: matriculas ?? [] }
+  return { turma: turma as unknown as TurmaDetail, matriculas: matriculas ?? [] }
 }
 
 async function searchAlunos(turmaId: string, q: string) {
@@ -76,7 +76,7 @@ export default async function TurmaDetalhePage({
   return (
     <div className="p-8">
       <div className="mb-6">
-        <p className="text-zinc-500 text-sm mb-1">{(turma as TurmaDetail).cursos?.nome ?? 'Curso'}</p>
+        <p className="text-zinc-500 text-sm mb-1">{turma.cursos?.nome ?? 'Curso'}</p>
         <h1 className="text-zinc-50 text-2xl font-semibold">{turma.nome}</h1>
       </div>
 
@@ -96,7 +96,7 @@ export default async function TurmaDetalhePage({
                 </tr>
               </thead>
               <tbody>
-                {(matriculas as MatriculaRow[]).map((m) => (
+                {(matriculas as unknown as MatriculaRow[]).map((m) => (
                   <tr key={m.id} className="border-b border-zinc-800/50">
                     <td className="px-6 py-3 text-zinc-300 text-sm">
                       {m.profiles?.nome ?? '—'}
