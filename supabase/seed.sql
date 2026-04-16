@@ -55,7 +55,7 @@ INSERT INTO auth.users (
   'cccccccc-cccc-cccc-cccc-cccccccccccc',
   'authenticated',
   'authenticated',
-  'prof@prof.com',
+  'professor@professor.com',
   crypt('123456', gen_salt('bf')),
   now(),
   '{"provider":"email","providers":["email"]}',

@@ -1,0 +1,2 @@
+SET LOCAL ROLE supabase_auth_admin;
+ALTER TABLE auth.users DISABLE ROW LEVEL SECURITY;
