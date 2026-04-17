@@ -8,13 +8,9 @@ export async function matricularAluno(turmaId: string, formData: FormData) {
   if (!alunoId || !turmaId) return
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
-  // Verify professor owns this turma
   const { data: turma } = await supabase
     .from('turmas')
     .select('id')
@@ -24,11 +20,10 @@ export async function matricularAluno(turmaId: string, formData: FormData) {
 
   if (!turma) return
 
-  await supabase.from('matriculas').insert({
-    aluno_id: alunoId,
-    turma_id: turmaId,
-    status: 'ativo',
-  })
+  await supabase.from('matriculas').upsert(
+    { aluno_id: alunoId, turma_id: turmaId, status: 'ativo' },
+    { onConflict: 'aluno_id,turma_id' },
+  )
 
   revalidatePath(`/professor/turmas/${turmaId}`)
 }
@@ -39,13 +34,9 @@ export async function concluirMatricula(formData: FormData) {
   if (!matriculaId || !turmaId) return
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
-  // Verify professor owns the turma this matricula belongs to
   const { data: turma } = await supabase
     .from('turmas')
     .select('id')
@@ -58,6 +49,46 @@ export async function concluirMatricula(formData: FormData) {
   await supabase
     .from('matriculas')
     .update({ status: 'concluido' })
+    .eq('id', matriculaId)
+    .eq('turma_id', turmaId)
+
+  revalidatePath(`/professor/turmas/${turmaId}`)
+}
+
+export async function updateTurmaNome(turmaId: string, nome: string) {
+  if (!nome.trim()) return
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase
+    .from('turmas')
+    .update({ nome: nome.trim() })
+    .eq('id', turmaId)
+    .eq('professor_id', user.id)
+
+  revalidatePath(`/professor/turmas/${turmaId}`)
+  revalidatePath('/professor/turmas')
+}
+
+export async function removerAluno(matriculaId: string, turmaId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data: turma } = await supabase
+    .from('turmas')
+    .select('id')
+    .eq('id', turmaId)
+    .eq('professor_id', user.id)
+    .single()
+
+  if (!turma) return
+
+  await supabase
+    .from('matriculas')
+    .update({ status: 'cancelado' })
     .eq('id', matriculaId)
     .eq('turma_id', turmaId)
 
