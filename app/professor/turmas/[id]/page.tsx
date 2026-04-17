@@ -2,12 +2,12 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { matricularAluno, concluirMatricula } from './actions'
 import { StudentSearch } from './student-search'
+import { EditNomeButton } from './edit-nome-button'
+import { RemoverAlunoButton } from './remover-aluno-button'
 
 async function getTurmaData(turmaId: string) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) return null
 
@@ -24,6 +24,7 @@ async function getTurmaData(turmaId: string) {
     .from('matriculas')
     .select('id, status, profiles!aluno_id(id, nome, email)')
     .eq('turma_id', turmaId)
+    .neq('status', 'cancelado')
     .order('status')
 
   return { turma: turma as unknown as TurmaDetail, matriculas: matriculas ?? [] }
@@ -36,6 +37,7 @@ async function searchAlunos(turmaId: string, q: string) {
     .from('matriculas')
     .select('aluno_id')
     .eq('turma_id', turmaId)
+    .neq('status', 'cancelado')
 
   const enrolledIds = (enrolled ?? []).map((m) => m.aluno_id)
 
@@ -68,16 +70,14 @@ export default async function TurmaDetalhePage({
   if (!result) redirect('/professor/turmas')
 
   const { turma, matriculas } = result
-
   const searchResults = q ? await searchAlunos(id, q) : []
-
   const addAction = matricularAluno.bind(null, id)
 
   return (
     <div className="p-8">
       <div className="mb-6">
         <p className="text-zinc-500 text-sm mb-1">{turma.cursos?.nome ?? 'Curso'}</p>
-        <h1 className="text-zinc-50 text-2xl font-semibold">{turma.nome}</h1>
+        <EditNomeButton turmaId={id} nomeAtual={turma.nome} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -117,26 +117,26 @@ export default async function TurmaDetalhePage({
                     </td>
                     <td className="px-6 py-3 text-right">
                       {m.status === 'ativo' && (
-                        <form action={concluirMatricula}>
-                          <input type="hidden" name="matriculaId" value={m.id} />
-                          <input type="hidden" name="turmaId" value={id} />
-                          <button
-                            type="submit"
-                            className="text-xs font-medium text-zinc-400 hover:text-zinc-50 transition-colors"
-                          >
-                            Concluir
-                          </button>
-                        </form>
+                        <div className="flex items-center justify-end">
+                          <form action={concluirMatricula}>
+                            <input type="hidden" name="matriculaId" value={m.id} />
+                            <input type="hidden" name="turmaId" value={id} />
+                            <button
+                              type="submit"
+                              className="text-xs font-medium text-zinc-400 hover:text-zinc-50 transition-colors"
+                            >
+                              Concluir
+                            </button>
+                          </form>
+                          <RemoverAlunoButton matriculaId={m.id} turmaId={id} />
+                        </div>
                       )}
                     </td>
                   </tr>
                 ))}
                 {matriculas.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={4}
-                      className="px-6 py-8 text-zinc-500 text-sm text-center"
-                    >
+                    <td colSpan={4} className="px-6 py-8 text-zinc-500 text-sm text-center">
                       Nenhum aluno matriculado ainda.
                     </td>
                   </tr>
