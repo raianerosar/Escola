@@ -74,3 +74,60 @@ export async function deleteHorario(horarioId: string, turmaId: string) {
 
   revalidatePath('/professor/dashboard')
 }
+
+export async function getAulaNota(
+  horarioId: string,
+  data: string,
+): Promise<string> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return ''
+
+  const { data: aula } = await supabase
+    .from('aulas')
+    .select('notas')
+    .eq('horario_id', horarioId)
+    .eq('data', data)
+    .single()
+
+  return aula?.notas ?? ''
+}
+
+export async function upsertAulaNota(
+  horarioId: string,
+  data: string,
+  notas: string,
+): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase.from('aulas').upsert(
+    { horario_id: horarioId, data, notas },
+    { onConflict: 'horario_id,data' },
+  )
+}
+
+export type AlunoInfo = {
+  id: string
+  nome: string
+  status: string
+}
+
+export async function getAlunosDaTurma(turmaId: string): Promise<AlunoInfo[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('matriculas')
+    .select('status, profiles!aluno_id(id, nome)')
+    .eq('turma_id', turmaId)
+    .neq('status', 'cancelado')
+    .order('status')
+
+  type Row = { status: string; profiles: { id: string; nome: string } | null }
+  return ((data ?? []) as unknown as Row[])
+    .filter((m) => m.profiles)
+    .map((m) => ({ id: m.profiles!.id, nome: m.profiles!.nome, status: m.status }))
+}
