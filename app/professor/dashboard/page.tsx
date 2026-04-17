@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { PlannerBlock } from './planner-block'
 
 async function getStats() {
   const supabase = await createClient()
@@ -47,6 +48,7 @@ export default async function ProfessorDashboardPage() {
         <StatCard label="Total de Alunos" value={stats.alunos} color="text-green-400" />
         <StatCard label="Concluídos" value={stats.concluidos} color="text-purple-400" />
       </div>
+      <PlannerBlock />
     </div>
   )
 }
