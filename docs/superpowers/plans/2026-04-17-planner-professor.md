@@ -510,7 +510,7 @@ npm run dev
 
 - [ ] **Step 2: Login as professor**
 
-Go to http://localhost:3000/login and log in with `prof@prof.com` / `123456`.
+Go to http://localhost:3000/login and log in with `professor@professor.com` / `123456`.
 
 - [ ] **Step 3: Check empty state**
 
@@ -527,7 +527,7 @@ In Supabase Studio (http://127.0.0.1:54323), SQL editor:
 select t.id, t.nome
 from public.turmas t
 join public.profiles p on p.id = t.professor_id
-where p.email = 'prof@prof.com';
+where p.email = 'professor@professor.com';
 ```
 
 Then insert slots across multiple days (replace `<turma_id>`):
