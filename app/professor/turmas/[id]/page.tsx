@@ -13,7 +13,7 @@ async function getTurmaData(turmaId: string) {
 
   const { data: turma } = await supabase
     .from('turmas')
-    .select('id, nome, cursos!curso_id(nome)')
+    .select('id, nome, ativo, data_inicio, data_fim, cursos!curso_id(nome)')
     .eq('id', turmaId)
     .eq('professor_id', user.id)
     .single()
@@ -78,6 +78,41 @@ export default async function TurmaDetalhePage({
       <div className="mb-6">
         <p className="text-zinc-500 text-sm mb-1">{turma.cursos?.nome ?? 'Curso'}</p>
         <EditNomeButton turmaId={id} nomeAtual={turma.nome} />
+      </div>
+
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="bg-zinc-900 rounded-xl px-5 py-4">
+          <p className="text-zinc-500 text-xs mb-1">Curso</p>
+          <p className="text-zinc-100 text-sm font-medium">{turma.cursos?.nome ?? '—'}</p>
+        </div>
+        <div className="bg-zinc-900 rounded-xl px-5 py-4">
+          <p className="text-zinc-500 text-xs mb-1">Início</p>
+          <p className="text-zinc-100 text-sm font-medium">
+            {turma.data_inicio
+              ? new Date(turma.data_inicio).toLocaleDateString('pt-BR')
+              : '—'}
+          </p>
+        </div>
+        <div className="bg-zinc-900 rounded-xl px-5 py-4">
+          <p className="text-zinc-500 text-xs mb-1">Fim</p>
+          <p className="text-zinc-100 text-sm font-medium">
+            {turma.data_fim
+              ? new Date(turma.data_fim).toLocaleDateString('pt-BR')
+              : '—'}
+          </p>
+        </div>
+        <div className="bg-zinc-900 rounded-xl px-5 py-4">
+          <p className="text-zinc-500 text-xs mb-1">Status</p>
+          <span
+            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+              turma.ativo
+                ? 'bg-green-900/40 text-green-400'
+                : 'bg-zinc-800 text-zinc-500'
+            }`}
+          >
+            {turma.ativo ? 'Ativa' : 'Inativa'}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -157,6 +192,9 @@ export default async function TurmaDetalhePage({
 type TurmaDetail = {
   id: string
   nome: string
+  ativo: boolean | null
+  data_inicio: string | null
+  data_fim: string | null
   cursos: { nome: string } | null
 }
 
