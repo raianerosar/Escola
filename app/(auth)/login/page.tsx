@@ -42,12 +42,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-      <div className="bg-zinc-900 rounded-xl p-8 w-full max-w-sm">
-        <p className="text-blue-400 text-xs font-bold tracking-widest uppercase mb-1">
+    <div className="app-bg flex min-h-screen items-center justify-center p-4">
+      <div className="surface-card w-full max-w-sm p-8 shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
+        <div className="brand-mark mb-6">
+          <span className="material-symbols-outlined text-[25px]">school</span>
+        </div>
+        <p className="mb-1 text-xs font-bold uppercase tracking-widest text-fuchsia-200">
           Escola Habilidade
         </p>
-        <h1 className="text-zinc-50 text-xl font-semibold mb-6">
+        <h1 className="mb-6 text-xl font-semibold text-zinc-50">
           Bem-vindo de volta
         </h1>
         <form onSubmit={handleSubmit}>
@@ -56,7 +59,7 @@ export default function LoginPage() {
             type="email"
             placeholder="Email"
             required
-            className="w-full bg-zinc-950 text-zinc-50 rounded-md px-3 py-2.5 mb-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="input mb-3"
           />
           <div className="relative mb-4">
             <input
@@ -64,12 +67,12 @@ export default function LoginPage() {
               type={showPassword ? 'text' : 'password'}
               placeholder="Senha"
               required
-              className="w-full bg-zinc-950 text-zinc-50 rounded-md px-3 py-2.5 pr-10 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="input pr-10"
             />
             <button
               type="button"
               onClick={() => setShowPassword(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors hover:text-fuchsia-100"
               aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
             >
               {showPassword ? (
@@ -92,7 +95,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-md py-2.5 text-sm font-semibold hover:bg-blue-500 disabled:opacity-50 transition-colors"
+            className="inline-flex w-full items-center justify-center rounded-md bg-fuchsia-300 py-2.5 text-sm font-semibold text-[#21002f] transition-colors hover:bg-fuchsia-200 disabled:opacity-50"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>

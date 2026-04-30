@@ -29,20 +29,33 @@ export function StudentSearch({
   }
 
   return (
-    <div className="bg-zinc-900 rounded-xl p-6">
-      <h2 className="text-zinc-50 text-sm font-semibold mb-4">Adicionar Aluno</h2>
-      <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-        <input
-          name="q"
-          defaultValue={searchParams.get('q') ?? ''}
-          placeholder="Buscar por nome ou email"
-          className="flex-1 bg-zinc-950 text-zinc-50 rounded-md px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
+    <aside className="rounded-lg border border-zinc-800 bg-zinc-900 p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-50">Adicionar aluno</h2>
+          <p className="mt-1 text-xs text-zinc-500">Busque por nome ou email</p>
+        </div>
+        <span className="material-symbols-outlined text-[22px] text-fuchsia-200/70">person_add</span>
+      </div>
+
+      <form onSubmit={handleSearch} className="mb-4 space-y-2">
+        <div className="relative">
+          <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-zinc-500">
+            search
+          </span>
+          <input
+            name="q"
+            defaultValue={searchParams.get('q') ?? ''}
+            placeholder="Nome ou email"
+            className="w-full rounded-md border border-zinc-800 bg-zinc-950 py-2.5 pl-10 pr-3 text-sm text-zinc-50 placeholder:text-zinc-600 focus:border-fuchsia-300/60 focus:outline-none"
+          />
+        </div>
         <button
           type="submit"
           disabled={isPending}
-          className="bg-zinc-800 text-zinc-300 hover:text-zinc-50 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-fuchsia-300 px-4 py-2.5 text-sm font-semibold text-[#21002f] transition-colors hover:bg-fuchsia-200 disabled:opacity-50"
         >
+          <span className="material-symbols-outlined text-[18px]">search</span>
           Buscar
         </button>
       </form>
@@ -52,18 +65,19 @@ export function StudentSearch({
           {results.map((aluno) => (
             <li
               key={aluno.id}
-              className="flex items-center justify-between bg-zinc-800/50 rounded-lg px-4 py-2.5"
+              className="rounded-lg border border-zinc-800 bg-zinc-950/45 px-4 py-3"
             >
-              <div>
-                <p className="text-zinc-200 text-sm">{aluno.nome}</p>
-                <p className="text-zinc-500 text-xs">{aluno.email}</p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-zinc-200">{aluno.nome}</p>
+                <p className="mt-1 truncate text-xs text-zinc-500">{aluno.email}</p>
               </div>
-              <form action={addAction}>
+              <form action={addAction} className="mt-3">
                 <input type="hidden" name="alunoId" value={aluno.id} />
                 <button
                   type="submit"
-                  className="text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-md border border-fuchsia-300/25 px-3 py-2 text-xs font-semibold text-fuchsia-100 transition-colors hover:bg-fuchsia-300/10"
                 >
+                  <span className="material-symbols-outlined text-[16px]">add</span>
                   Matricular
                 </button>
               </form>
@@ -73,8 +87,10 @@ export function StudentSearch({
       )}
 
       {searchParams.get('q') && results.length === 0 && (
-        <p className="text-zinc-500 text-sm text-center">Nenhum aluno encontrado.</p>
+        <div className="rounded-lg border border-dashed border-fuchsia-300/15 px-4 py-8 text-center">
+          <p className="text-sm text-zinc-500">Nenhum aluno encontrado.</p>
+        </div>
       )}
-    </div>
+    </aside>
   )
 }

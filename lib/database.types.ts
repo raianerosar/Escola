@@ -122,6 +122,96 @@ export type Database = {
           },
         ]
       }
+      aluno_tarefa_respostas: {
+        Row: {
+          aluno_id: string
+          atualizado_em: string
+          entregue_em: string
+          id: string
+          resposta: string
+          tarefa_id: string
+        }
+        Insert: {
+          aluno_id: string
+          atualizado_em?: string
+          entregue_em?: string
+          id?: string
+          resposta: string
+          tarefa_id: string
+        }
+        Update: {
+          aluno_id?: string
+          atualizado_em?: string
+          entregue_em?: string
+          id?: string
+          resposta?: string
+          tarefa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aluno_tarefa_respostas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aluno_tarefa_respostas_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "professor_tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professor_tarefas: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          data_entrega: string | null
+          descricao: string | null
+          id: string
+          professor_id: string
+          titulo: string
+          turma_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          data_entrega?: string | null
+          descricao?: string | null
+          id?: string
+          professor_id: string
+          titulo: string
+          turma_id: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          data_entrega?: string | null
+          descricao?: string | null
+          id?: string
+          professor_id?: string
+          titulo?: string
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professor_tarefas_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professor_tarefas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

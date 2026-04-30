@@ -4,10 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { LogoutButton } from '@/components/logout-button'
 
 const NAV_ITEMS = [
-  { href: '/diretor/dashboard', icon: 'dashboard', label: 'Dashboard' },
+  { href: '/diretor/dashboard', icon: 'space_dashboard', label: 'Painel' },
   { href: '/diretor/alunos', icon: 'school', label: 'Alunos' },
-  { href: '/diretor/professores', icon: 'person', label: 'Professores' },
-  { href: '/diretor/cursos', icon: 'menu_book', label: 'Cursos' },
+  { href: '/diretor/professores', icon: 'badge', label: 'Professores' },
+  { href: '/diretor/cursos', icon: 'local_library', label: 'Cursos' },
   { href: '/diretor/turmas', icon: 'groups', label: 'Turmas' },
   { href: '/diretor/certificados', icon: 'workspace_premium', label: 'Certificados' },
 ]
@@ -37,39 +37,45 @@ export default async function DiretorLayout({
   const initial = profile?.nome?.charAt(0).toUpperCase() ?? '?'
 
   return (
-    <div className="flex min-h-screen bg-zinc-950">
-      <nav className="group w-14 hover:w-56 transition-all duration-200 bg-zinc-900 flex flex-col overflow-hidden shrink-0">
-        <div className="flex-1 py-4">
-          <div className="px-3.5 mb-6">
-            <span className="material-symbols-outlined text-blue-400 text-[28px]">
-              school
-            </span>
+    <div className="app-shell lg:flex">
+      <nav className="app-sidebar">
+        <div className="hidden border-b border-white/10 pb-5 lg:block">
+          <div className="flex items-center gap-3">
+            <div className="brand-mark">
+              <span className="material-symbols-outlined text-[24px]">school</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-zinc-50">Diretoria</p>
+              <p className="text-xs text-zinc-500">Gestao escolar</p>
+            </div>
           </div>
+        </div>
+
+        <div className="flex flex-1 items-center gap-1 overflow-x-auto lg:mt-5 lg:block lg:space-y-1 lg:overflow-visible">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 px-3.5 py-2.5 text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800 rounded-lg mx-1 mb-1 transition-colors"
+              className="nav-link"
             >
-              <span className="material-symbols-outlined text-[20px] shrink-0">
-                {item.icon}
-              </span>
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden text-sm">
-                {item.label}
-              </span>
+              <span className="material-symbols-outlined nav-icon">{item.icon}</span>
+              <span className="whitespace-nowrap">{item.label}</span>
             </Link>
           ))}
         </div>
-        <div className="p-3 border-t border-zinc-800 flex items-center gap-3">
-          <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-            {initial}
+
+        <div className="hidden border-t border-white/10 pt-4 lg:flex lg:items-center lg:gap-3">
+          <div className="user-avatar">{initial}</div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-zinc-200">{profile?.nome ?? 'Diretoria'}</p>
+            <p className="text-xs text-zinc-500">Conta administrativa</p>
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity overflow-hidden">
+          <div>
             <LogoutButton />
           </div>
         </div>
       </nav>
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="min-w-0 flex-1 overflow-auto">{children}</main>
     </div>
   )
 }

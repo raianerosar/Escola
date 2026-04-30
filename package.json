@@ -27,6 +27,7 @@
     "@types/react-dom": "^19",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
+    "supabase": "^2.91.3",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",

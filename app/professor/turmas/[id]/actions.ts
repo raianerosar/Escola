@@ -45,15 +45,23 @@ export async function concluirMatricula(formData: FormData) {
 
   if (!user) return
 
-  // Verify professor owns the turma this matricula belongs to
   const { data: turma } = await supabase
     .from('turmas')
-    .select('id')
+    .select('id, curso_id')
     .eq('id', turmaId)
     .eq('professor_id', user.id)
     .single()
 
   if (!turma) return
+
+  const { data: matricula } = await supabase
+    .from('matriculas')
+    .select('id, aluno_id')
+    .eq('id', matriculaId)
+    .eq('turma_id', turmaId)
+    .single()
+
+  if (!matricula?.aluno_id) return
 
   await supabase
     .from('matriculas')
@@ -61,5 +69,28 @@ export async function concluirMatricula(formData: FormData) {
     .eq('id', matriculaId)
     .eq('turma_id', turmaId)
 
+  if (turma.curso_id) {
+    const { data: certificadoExistente } = await supabase
+      .from('certificados')
+      .select('id')
+      .eq('aluno_id', matricula.aluno_id)
+      .eq('curso_id', turma.curso_id)
+      .maybeSingle()
+
+    if (!certificadoExistente) {
+      await supabase.from('certificados').insert({
+        aluno_id: matricula.aluno_id,
+        curso_id: turma.curso_id,
+      })
+    }
+  }
+
   revalidatePath(`/professor/turmas/${turmaId}`)
+  revalidatePath('/professor/dashboard')
+  revalidatePath('/professor/planner')
+  revalidatePath('/diretor/dashboard')
+  revalidatePath('/diretor/certificados')
+  revalidatePath(`/diretor/alunos/${matricula.aluno_id}`)
+  revalidatePath('/aluno/dashboard')
+  revalidatePath('/aluno/certificados')
 }

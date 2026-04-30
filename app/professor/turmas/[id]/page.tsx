@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { matricularAluno, concluirMatricula } from './actions'
@@ -70,60 +71,71 @@ export default async function TurmaDetalhePage({
   const { turma, matriculas } = result
 
   const searchResults = q ? await searchAlunos(id, q) : []
+  const rows = matriculas as unknown as MatriculaRow[]
+  const concluidos = rows.filter((m) => m.status === 'concluido').length
 
   const addAction = matricularAluno.bind(null, id)
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <p className="text-zinc-500 text-sm mb-1">{turma.cursos?.nome ?? 'Curso'}</p>
-        <h1 className="text-zinc-50 text-2xl font-semibold">{turma.nome}</h1>
-      </div>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <header className="page-hero mb-6 p-5">
+        <Link href="/professor/turmas" className="inline-flex items-center gap-1 text-xs font-semibold text-fuchsia-200 transition-colors hover:text-fuchsia-100">
+          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+          Voltar para turmas
+        </Link>
+        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-fuchsia-100/75">{turma.cursos?.nome ?? 'Curso'}</p>
+            <h1 className="mt-2 text-3xl font-bold text-zinc-50">{turma.nome}</h1>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:min-w-64">
+            <Summary label="Alunos" value={rows.length} />
+            <Summary label="Concluidos" value={concluidos} />
+          </div>
+        </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="bg-zinc-900 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-zinc-800">
-              <h2 className="text-zinc-50 text-sm font-semibold">Alunos Matriculados</h2>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_360px]">
+        <section className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div className="flex items-center justify-between gap-3 border-b border-zinc-800 px-5 py-4">
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-50">Alunos matriculados</h2>
+              <p className="mt-1 text-xs text-zinc-500">Controle de status desta turma</p>
             </div>
-            <table className="w-full">
+            <span className="material-symbols-outlined text-[22px] text-fuchsia-200/70">fact_check</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[700px]">
               <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left px-6 py-3 text-zinc-500 text-xs font-medium">Nome</th>
-                  <th className="text-left px-6 py-3 text-zinc-500 text-xs font-medium">Email</th>
-                  <th className="text-left px-6 py-3 text-zinc-500 text-xs font-medium">Status</th>
+                <tr className="border-b border-zinc-800 bg-zinc-950/35">
+                  <Th>Nome</Th>
+                  <Th>Email</Th>
+                  <Th>Status</Th>
                   <th className="px-6 py-3" />
                 </tr>
               </thead>
-              <tbody>
-                {(matriculas as unknown as MatriculaRow[]).map((m) => (
-                  <tr key={m.id} className="border-b border-zinc-800/50">
-                    <td className="px-6 py-3 text-zinc-300 text-sm">
-                      {m.profiles?.nome ?? '—'}
+              <tbody className="divide-y divide-zinc-800">
+                {rows.map((m) => (
+                  <tr key={m.id} className="transition-colors hover:bg-fuchsia-400/5">
+                    <td className="px-6 py-4 text-sm font-medium text-zinc-200">
+                      {m.profiles?.nome ?? 'Sem nome'}
                     </td>
-                    <td className="px-6 py-3 text-zinc-400 text-xs">
-                      {m.profiles?.email ?? '—'}
+                    <td className="px-6 py-4 text-xs text-zinc-500">
+                      {m.profiles?.email ?? 'Sem email'}
                     </td>
-                    <td className="px-6 py-3">
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          m.status === 'concluido'
-                            ? 'bg-purple-900/40 text-purple-400'
-                            : 'bg-green-900/40 text-green-400'
-                        }`}
-                      >
-                        {m.status === 'concluido' ? 'Concluído' : 'Ativo'}
-                      </span>
+                    <td className="px-6 py-4">
+                      <MatriculaBadge status={m.status} />
                     </td>
-                    <td className="px-6 py-3 text-right">
+                    <td className="px-6 py-4 text-right">
                       {m.status === 'ativo' && (
                         <form action={concluirMatricula}>
                           <input type="hidden" name="matriculaId" value={m.id} />
                           <input type="hidden" name="turmaId" value={id} />
                           <button
                             type="submit"
-                            className="text-xs font-medium text-zinc-400 hover:text-zinc-50 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-md bg-fuchsia-300 px-3 py-1.5 text-xs font-semibold text-[#21002f] transition-colors hover:bg-fuchsia-200"
                           >
+                            <span className="material-symbols-outlined text-[16px]">check</span>
                             Concluir
                           </button>
                         </form>
@@ -131,12 +143,9 @@ export default async function TurmaDetalhePage({
                     </td>
                   </tr>
                 ))}
-                {matriculas.length === 0 && (
+                {rows.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={4}
-                      className="px-6 py-8 text-zinc-500 text-sm text-center"
-                    >
+                    <td colSpan={4} className="px-6 py-12 text-center text-sm text-zinc-500">
                       Nenhum aluno matriculado ainda.
                     </td>
                   </tr>
@@ -144,14 +153,34 @@ export default async function TurmaDetalhePage({
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <StudentSearch results={searchResults} addAction={addAction} />
-        </div>
+        <StudentSearch results={searchResults} addAction={addAction} />
       </div>
     </div>
   )
+}
+
+function Th({ children }: { children: React.ReactNode }) {
+  return <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-[0.08em] text-fuchsia-100/60">{children}</th>
+}
+
+function Summary({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 px-4 py-3">
+      <p className="text-2xl font-black text-fuchsia-100">{value}</p>
+      <p className="text-xs text-zinc-500">{label}</p>
+    </div>
+  )
+}
+
+function MatriculaBadge({ status }: { status: string }) {
+  const className =
+    status === 'concluido'
+      ? 'bg-fuchsia-400/10 text-fuchsia-200'
+      : 'bg-emerald-400/10 text-emerald-200'
+
+  return <span className={`rounded-md px-2.5 py-1 text-xs font-medium ${className}`}>{status === 'concluido' ? 'Concluido' : 'Ativo'}</span>
 }
 
 type TurmaDetail = {
