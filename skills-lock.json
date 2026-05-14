@@ -1,6 +1,7 @@
 {
   "version": 1,
   "skills": {
+<<<<<<< HEAD
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
@@ -25,6 +26,12 @@
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+=======
+    "shadcn-ui": {
+      "source": "google-labs-code/stitch-skills",
+      "sourceType": "github",
+      "computedHash": "119a14a004bd30fa99d386df599bd0db8d057cca146f7ee08349daed48b2ea55"
+>>>>>>> 261c8a0d3ab614ef80a18c8f03e72fe01bddca32
     }
   }
 }

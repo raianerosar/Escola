@@ -1,4 +1,5 @@
 import { resolveRedirect } from '@/lib/auth/resolve-redirect'
+import { getUserOrNull } from '@/lib/supabase/auth'
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -26,9 +27,7 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUserOrNull(supabase)
 
   const { pathname } = request.nextUrl
   const userId = user?.id ?? null

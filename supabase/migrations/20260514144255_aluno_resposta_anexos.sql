@@ -1,0 +1,64 @@
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('tarefas-entregas', 'tarefas-entregas', false, 10485760)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit;
+
+create table public.aluno_tarefa_resposta_anexos (
+  id uuid primary key default gen_random_uuid(),
+  resposta_id uuid not null references public.aluno_tarefa_respostas on delete cascade,
+  tarefa_id uuid not null references public.professor_tarefas on delete cascade,
+  aluno_id uuid not null references public.profiles on delete cascade,
+  bucket_id text not null default 'tarefas-entregas',
+  caminho text not null unique,
+  nome text not null,
+  mime_type text,
+  tamanho bigint not null default 0,
+  criado_em timestamptz not null default now()
+);
+
+create index aluno_tarefa_resposta_anexos_resposta_id_idx
+  on public.aluno_tarefa_resposta_anexos (resposta_id);
+
+create index aluno_tarefa_resposta_anexos_tarefa_id_idx
+  on public.aluno_tarefa_resposta_anexos (tarefa_id);
+
+alter table public.aluno_tarefa_resposta_anexos enable row level security;
+
+create policy "aluno_tarefa_resposta_anexos_aluno_select_own"
+  on public.aluno_tarefa_resposta_anexos
+  for select using (aluno_id = auth.uid());
+
+create policy "aluno_tarefa_resposta_anexos_professor_select_own_tarefa"
+  on public.aluno_tarefa_resposta_anexos
+  for select using (
+    exists (
+      select 1
+      from public.professor_tarefas pt
+      where pt.id = aluno_tarefa_resposta_anexos.tarefa_id
+        and pt.professor_id = auth.uid()
+    )
+  );
+
+create policy "aluno_tarefa_resposta_anexos_aluno_insert_own_response"
+  on public.aluno_tarefa_resposta_anexos
+  for insert with check (
+    aluno_id = auth.uid()
+    and bucket_id = 'tarefas-entregas'
+    and exists (
+      select 1
+      from public.aluno_tarefa_respostas atr
+      join public.professor_tarefas pt on pt.id = atr.tarefa_id
+      join public.matriculas m on m.turma_id = pt.turma_id
+      where atr.id = resposta_id
+        and atr.tarefa_id = aluno_tarefa_resposta_anexos.tarefa_id
+        and atr.aluno_id = auth.uid()
+        and pt.ativo
+        and m.aluno_id = auth.uid()
+        and m.status <> 'cancelado'
+    )
+  );
+
+create policy "aluno_tarefa_resposta_anexos_aluno_delete_own"
+  on public.aluno_tarefa_resposta_anexos
+  for delete using (aluno_id = auth.uid());

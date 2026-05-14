@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { PlannerBlock } from './planner-block'
 
 type Aviso = {
   href: string
@@ -162,6 +163,8 @@ export default async function ProfessorDashboardPage() {
           {stats.avisos.length === 0 && <div className="px-5 py-10 text-center text-sm text-zinc-500">Nenhum informe pendente agora.</div>}
         </div>
       </section>
+
+      <PlannerBlock />
     </div>
   )
 }

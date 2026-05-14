@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { entregarTarefa } from './actions'
+
+const ATTACHMENTS_BUCKET = 'tarefas-anexos'
+const SUBMISSIONS_BUCKET = 'tarefas-entregas'
 
 type TarefaRow = {
   id: string
@@ -9,12 +13,23 @@ type TarefaRow = {
   criado_em: string
   turmas: { nome: string; cursos: { nome: string } | null } | null
   profiles: { nome: string } | null
+  professor_tarefa_anexos: AttachmentRow[]
   aluno_tarefa_respostas: {
     id: string
     resposta: string
     entregue_em: string
     atualizado_em: string
+    aluno_tarefa_resposta_anexos: AttachmentRow[]
   }[]
+}
+
+type AttachmentRow = {
+  id: string
+  caminho: string
+  nome: string
+  mime_type: string | null
+  tamanho: number
+  signedUrl?: string | null
 }
 
 async function getTarefasAluno() {
@@ -25,7 +40,9 @@ async function getTarefasAluno() {
 
   if (!user) return []
 
-  const { data: matriculas } = await supabase
+  const admin = createAdminClient()
+
+  const { data: matriculas } = await admin
     .from('matriculas')
     .select('turma_id')
     .eq('aluno_id', user.id)
@@ -37,7 +54,7 @@ async function getTarefasAluno() {
 
   if (turmaIds.length === 0) return []
 
-  const { data } = await supabase
+  const { data } = await admin
     .from('professor_tarefas')
     .select(
       `
@@ -48,15 +65,23 @@ async function getTarefasAluno() {
       criado_em,
       turmas!turma_id (nome, cursos!curso_id(nome)),
       profiles!professor_id (nome),
-      aluno_tarefa_respostas(id, resposta, entregue_em, atualizado_em)
+      professor_tarefa_anexos(id, caminho, nome, mime_type, tamanho),
+      aluno_tarefa_respostas(
+        id,
+        resposta,
+        entregue_em,
+        atualizado_em,
+        aluno_tarefa_resposta_anexos(id, caminho, nome, mime_type, tamanho)
+      )
     `
     )
     .eq('ativo', true)
     .in('turma_id', turmaIds)
+    .eq('aluno_tarefa_respostas.aluno_id', user.id)
     .order('data_entrega', { ascending: true, nullsFirst: false })
     .order('criado_em', { ascending: false })
 
-  return (data ?? []) as unknown as TarefaRow[]
+  return signAttachmentUrls(admin, (data ?? []) as unknown as TarefaRow[])
 }
 
 export default async function AlunoTarefasPage() {
@@ -125,6 +150,7 @@ function TarefaAluno({ tarefa }: { tarefa: TarefaRow }) {
           <Info label="Curso" value={tarefa.turmas?.cursos?.nome ?? 'Curso nao informado'} />
           <Info label="Professor" value={tarefa.profiles?.nome ?? 'Professor'} />
         </div>
+        <AttachmentList anexos={tarefa.professor_tarefa_anexos} />
       </div>
 
       <form action={entregarTarefa} className="rounded-lg border border-zinc-800 bg-zinc-950/55 p-4">
@@ -135,13 +161,24 @@ function TarefaAluno({ tarefa }: { tarefa: TarefaRow }) {
           </span>
           <textarea
             name="resposta"
-            required
             rows={5}
             defaultValue={resposta?.resposta ?? ''}
             placeholder="Escreva sua entrega ou observacao para o professor"
             className="input resize-none"
           />
         </label>
+        <label className="mt-3 block">
+          <span className="mb-2 block text-xs font-medium text-zinc-500">Arquivos da entrega</span>
+          <input
+            name="anexos"
+            type="file"
+            multiple
+            accept="image/*,.pdf,.txt,.doc,.docx,.ppt,.pptx"
+            className="input file:mr-3 file:rounded-md file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-zinc-100"
+          />
+          <span className="mt-1 block text-xs text-zinc-600">Ate 5 arquivos, 10 MB cada.</span>
+        </label>
+        {resposta && <SubmissionAttachmentList anexos={resposta.aluno_tarefa_resposta_anexos} />}
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-zinc-600">
             {resposta ? `Ultima entrega: ${formatDateTime(resposta.atualizado_em)}` : 'Ainda nao entregue'}
@@ -152,6 +189,100 @@ function TarefaAluno({ tarefa }: { tarefa: TarefaRow }) {
         </div>
       </form>
     </article>
+  )
+}
+
+async function signAttachmentUrls(
+  admin: ReturnType<typeof createAdminClient>,
+  tarefas: TarefaRow[]
+) {
+  await Promise.all(
+    tarefas.flatMap((tarefa) =>
+      [
+        ...tarefa.professor_tarefa_anexos.map(async (anexo) => {
+          const { data } = await admin.storage
+            .from(ATTACHMENTS_BUCKET)
+            .createSignedUrl(anexo.caminho, 60 * 60)
+
+          anexo.signedUrl = data?.signedUrl ?? null
+        }),
+        ...tarefa.aluno_tarefa_respostas.flatMap((resposta) =>
+          resposta.aluno_tarefa_resposta_anexos.map(async (anexo) => {
+            const { data } = await admin.storage
+              .from(SUBMISSIONS_BUCKET)
+              .createSignedUrl(anexo.caminho, 60 * 60)
+
+            anexo.signedUrl = data?.signedUrl ?? null
+          })
+        ),
+      ]
+    )
+  )
+
+  return tarefas
+}
+
+function SubmissionAttachmentList({ anexos }: { anexos: AttachmentRow[] }) {
+  if (anexos.length === 0) return null
+
+  return (
+    <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-950/70 p-3">
+      <p className="mb-2 text-xs font-semibold text-zinc-500">Arquivos enviados</p>
+      <div className="flex flex-wrap gap-2">
+        {anexos.map((anexo) => (
+          <a
+            key={anexo.id}
+            href={anexo.signedUrl ?? '#'}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-9 items-center gap-2 rounded-md border border-zinc-800 px-2.5 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-fuchsia-300/40 hover:text-fuchsia-100"
+          >
+            <span className="material-symbols-outlined text-[17px] text-fuchsia-200">
+              {anexo.mime_type?.startsWith('image/') ? 'image' : 'attach_file'}
+            </span>
+            <span className="max-w-36 truncate">{anexo.nome}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AttachmentList({ anexos }: { anexos: AttachmentRow[] }) {
+  if (anexos.length === 0) return null
+
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      {anexos.map((anexo) => (
+        <a
+          key={anexo.id}
+          href={anexo.signedUrl ?? '#'}
+          target="_blank"
+          rel="noreferrer"
+          className="group overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/60 transition-colors hover:border-fuchsia-300/40"
+        >
+          {anexo.mime_type?.startsWith('image/') && anexo.signedUrl ? (
+            <img
+              src={anexo.signedUrl}
+              alt={anexo.nome}
+              className="h-36 w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-24 items-center justify-center bg-zinc-900">
+              <span className="material-symbols-outlined text-[30px] text-fuchsia-200">attach_file</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 px-3 py-2">
+            <span className="material-symbols-outlined text-[18px] text-fuchsia-200">
+              {anexo.mime_type?.startsWith('image/') ? 'image' : 'open_in_new'}
+            </span>
+            <span className="truncate text-xs font-medium text-zinc-300 group-hover:text-fuchsia-100">
+              {anexo.nome}
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
   )
 }
 

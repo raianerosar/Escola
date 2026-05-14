@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 type DashboardData = {
   cursos: number
@@ -9,11 +11,13 @@ type DashboardData = {
   atividades: number
   conclusao: number
   matriculas: MatriculaRow[]
+  tarefasRecentes: TarefaRow[]
   certificadosRecentes: CertificadoRow[]
 }
 
 type MatriculaRow = {
   id: string
+  turma_id: string | null
   status: string
   criado_em: string | null
   turmas: {
@@ -34,6 +38,18 @@ type CertificadoRow = {
   cursos: { nome: string } | null
 }
 
+type TarefaRow = {
+  id: string
+  titulo: string
+  data_entrega: string | null
+  criado_em: string
+  turmas: {
+    nome: string
+    cursos: { nome: string } | null
+  } | null
+  aluno_tarefa_respostas: { id: string }[]
+}
+
 async function getDashboardData(): Promise<DashboardData> {
   const supabase = await createClient()
   const {
@@ -44,12 +60,15 @@ async function getDashboardData(): Promise<DashboardData> {
     return emptyDashboardData()
   }
 
+  const admin = createAdminClient()
+
   const [matriculasResult, certificadosResult] = await Promise.all([
-    supabase
+    admin
       .from('matriculas')
       .select(
         `
         id,
+        turma_id,
         status,
         criado_em,
         turmas!turma_id (
@@ -66,7 +85,7 @@ async function getDashboardData(): Promise<DashboardData> {
       )
       .eq('aluno_id', user.id)
       .order('criado_em', { ascending: false }),
-    supabase
+    admin
       .from('certificados')
       .select('id, data_emissao, cursos!curso_id(nome)', { count: 'exact' })
       .eq('aluno_id', user.id),
@@ -78,12 +97,17 @@ async function getDashboardData(): Promise<DashboardData> {
       .map((matricula) => matricula.turmas?.cursos?.id)
       .filter((id): id is string => Boolean(id))
   )
+  const turmaIds = matriculas
+    .filter((matricula) => matricula.status !== 'cancelado')
+    .map((matricula) => matricula.turma_id)
+    .filter((id): id is string => Boolean(id))
+  const tarefas = await getTarefasRecebidas(admin, turmaIds, user.id)
+  const atividades = tarefas.filter((tarefa) => tarefa.aluno_tarefa_respostas.length === 0).length
   const horasAula = matriculas.reduce(
     (total, matricula) => total + (matricula.turmas?.cursos?.carga_horaria ?? 0),
     0
   )
   const concluidos = matriculas.filter((matricula) => matricula.status === 'concluido').length
-  const atividades = matriculas.filter((matricula) => matricula.status !== 'concluido').length
   const conclusao = matriculas.length > 0 ? Math.round((concluidos / matriculas.length) * 100) : 0
 
   return {
@@ -95,8 +119,37 @@ async function getDashboardData(): Promise<DashboardData> {
     atividades,
     conclusao,
     matriculas: matriculas.slice(0, 4),
+    tarefasRecentes: tarefas.slice(0, 3),
     certificadosRecentes: (certificadosResult.data ?? []) as unknown as CertificadoRow[],
   }
+}
+
+async function getTarefasRecebidas(
+  supabase: ReturnType<typeof createAdminClient>,
+  turmaIds: string[],
+  alunoId: string
+) {
+  if (turmaIds.length === 0) return []
+
+  const { data } = await supabase
+    .from('professor_tarefas')
+    .select(
+      `
+      id,
+      titulo,
+      data_entrega,
+      criado_em,
+      turmas!turma_id (nome, cursos!curso_id(nome)),
+      aluno_tarefa_respostas(id)
+    `
+    )
+    .eq('ativo', true)
+    .in('turma_id', turmaIds)
+    .eq('aluno_tarefa_respostas.aluno_id', alunoId)
+    .order('data_entrega', { ascending: true, nullsFirst: false })
+    .order('criado_em', { ascending: false })
+
+  return (data ?? []) as unknown as TarefaRow[]
 }
 
 export default async function AlunoDashboardPage() {
@@ -156,7 +209,8 @@ export default async function AlunoDashboardPage() {
           icon="assignment"
           label="Atividades"
           value={data.atividades}
-          helper="Pendências em andamento"
+          helper="Tarefas pendentes enviadas pelo professor"
+          href="/aluno/tarefas"
         />
       </div>
 
@@ -242,15 +296,16 @@ export default async function AlunoDashboardPage() {
                   text={`${certificado.cursos?.nome ?? 'Curso'} em ${formatDate(certificado.data_emissao)}`}
                 />
               ))}
-              {data.matriculas.filter((matricula) => matricula.status !== 'concluido').slice(0, 3).map((matricula) => (
+              {data.tarefasRecentes.map((tarefa) => (
                 <Notice
-                  key={matricula.id}
+                  key={tarefa.id}
                   icon="assignment"
-                  title="Atividade em andamento"
-                  text={matricula.turmas?.cursos?.nome ?? matricula.turmas?.nome ?? 'Turma ativa'}
+                  title={tarefa.aluno_tarefa_respostas.length > 0 ? 'Atividade entregue' : 'Atividade recebida'}
+                  text={`${tarefa.titulo} - ${tarefa.data_entrega ? `prazo ${formatDate(tarefa.data_entrega)}` : tarefa.turmas?.cursos?.nome ?? tarefa.turmas?.nome ?? 'Turma'}`}
+                  href="/aluno/tarefas"
                 />
               ))}
-              {data.certificadosRecentes.length === 0 && data.atividades === 0 && (
+              {data.certificadosRecentes.length === 0 && data.tarefasRecentes.length === 0 && (
                 <p className="text-sm text-zinc-500">Nenhum informe novo agora.</p>
               )}
             </div>
@@ -267,15 +322,17 @@ function StatCard({
   value,
   suffix = '',
   helper,
+  href,
 }: {
   icon: string
   label: string
   value: number
   suffix?: string
   helper: string
+  href?: string
 }) {
-  return (
-    <div className="surface-card-hover p-5">
+  const content = (
+    <>
       <div className="mb-4 flex items-center justify-between">
         <span className="material-symbols-outlined accent-icon">{icon}</span>
         <span className="rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-400">Aluno</span>
@@ -286,6 +343,20 @@ function StatCard({
       </p>
       <p className="mt-1 text-sm text-zinc-500">{label}</p>
       <p className="mt-3 text-xs leading-5 text-zinc-600">{helper}</p>
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className="surface-card-hover block p-5">
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <div className="surface-card-hover p-5">
+      {content}
     </div>
   )
 }
@@ -325,14 +396,38 @@ function MiniMetric({ label, value }: { label: string; value: number }) {
   )
 }
 
-function Notice({ icon, title, text }: { icon: string; title: string; text: string }) {
-  return (
-    <div className="flex gap-3 rounded-lg border border-zinc-800 bg-zinc-950/70 p-3">
+function Notice({
+  icon,
+  title,
+  text,
+  href,
+}: {
+  icon: string
+  title: string
+  text: string
+  href?: string
+}) {
+  const content = (
+    <>
       <span className="material-symbols-outlined mt-0.5 text-[18px] text-fuchsia-200">{icon}</span>
       <div>
         <p className="text-sm font-medium text-zinc-100">{title}</p>
         <p className="mt-1 text-xs text-zinc-500">{text}</p>
       </div>
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className="flex gap-3 rounded-lg border border-zinc-800 bg-zinc-950/70 p-3 transition-colors hover:border-fuchsia-300/40">
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <div className="flex gap-3 rounded-lg border border-zinc-800 bg-zinc-950/70 p-3">
+      {content}
     </div>
   )
 }
@@ -352,6 +447,7 @@ function emptyDashboardData(): DashboardData {
     atividades: 0,
     conclusao: 0,
     matriculas: [],
+    tarefasRecentes: [],
     certificadosRecentes: [],
   }
 }

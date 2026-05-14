@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { getUserOrNull } from '@/lib/supabase/auth'
 import { createClient } from '@/lib/supabase/server'
 import { LogoutButton } from '@/components/logout-button'
 
@@ -16,9 +17,7 @@ export default async function ProfessorLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUserOrNull(supabase)
 
   if (!user) redirect('/login')
 

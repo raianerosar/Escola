@@ -164,6 +164,67 @@ export type Database = {
           },
         ]
       }
+      aluno_tarefa_resposta_anexos: {
+        Row: {
+          aluno_id: string
+          bucket_id: string
+          caminho: string
+          criado_em: string
+          id: string
+          mime_type: string | null
+          nome: string
+          resposta_id: string
+          tamanho: number
+          tarefa_id: string
+        }
+        Insert: {
+          aluno_id: string
+          bucket_id?: string
+          caminho: string
+          criado_em?: string
+          id?: string
+          mime_type?: string | null
+          nome: string
+          resposta_id: string
+          tamanho?: number
+          tarefa_id: string
+        }
+        Update: {
+          aluno_id?: string
+          bucket_id?: string
+          caminho?: string
+          criado_em?: string
+          id?: string
+          mime_type?: string | null
+          nome?: string
+          resposta_id?: string
+          tamanho?: number
+          tarefa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aluno_tarefa_resposta_anexos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aluno_tarefa_resposta_anexos_resposta_id_fkey"
+            columns: ["resposta_id"]
+            isOneToOne: false
+            referencedRelation: "aluno_tarefa_respostas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aluno_tarefa_resposta_anexos_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "professor_tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professor_tarefas: {
         Row: {
           ativo: boolean
@@ -208,6 +269,57 @@ export type Database = {
             columns: ["turma_id"]
             isOneToOne: false
             referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professor_tarefa_anexos: {
+        Row: {
+          bucket_id: string
+          caminho: string
+          criado_em: string
+          id: string
+          mime_type: string | null
+          nome: string
+          professor_id: string
+          tamanho: number
+          tarefa_id: string
+        }
+        Insert: {
+          bucket_id?: string
+          caminho: string
+          criado_em?: string
+          id?: string
+          mime_type?: string | null
+          nome: string
+          professor_id: string
+          tamanho?: number
+          tarefa_id: string
+        }
+        Update: {
+          bucket_id?: string
+          caminho?: string
+          criado_em?: string
+          id?: string
+          mime_type?: string | null
+          nome?: string
+          professor_id?: string
+          tamanho?: number
+          tarefa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professor_tarefa_anexos_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professor_tarefa_anexos_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "professor_tarefas"
             referencedColumns: ["id"]
           },
         ]
